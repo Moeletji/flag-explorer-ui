@@ -1,0 +1,65 @@
+name: CI/CD for Flag Explorer UI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOCKER_IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/flag-explorer-ui
+  PROD_REACT_APP_API_URL: ${{ secrets.PROD_REACT_APP_API_URL }}
+
+jobs:
+  test-and-build-frontend:
+    name: Test & Build Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./flag-explorer-api
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install frontend dependencies
+        run: npm install --frozen-lockfile
+      - name: Run frontend tests
+        env:
+          REACT_APP_API_URL: "http://localhost:3000/api"
+        run: npm test --watchAll=false
+      - name: Build frontend application
+        env:
+          REACT_APP_API_URL: ${{ env.PROD_REACT_APP_API_URL }}
+        run: |
+          if [ -z "$REACT_APP_API_URL" ]; then
+            echo "Error: PROD_REACT_APP_API_URL secret is not set. Cannot build frontend."
+            exit 1
+          fi
+          npm build
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push frontend Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./flag-explorer-ui
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_FRONTEND }}:latest
+            ${{ env.DOCKER_IMAGE_FRONTEND }}:${{ github.sha }}
+          build-args: |
+            REACT_APP_API_URL=${{ env.PROD_REACT_APP_API_URL }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_FRONTEND }}:latest
+          cache-to: type=inline
