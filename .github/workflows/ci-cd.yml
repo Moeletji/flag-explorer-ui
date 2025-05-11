@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./flag-explorer-api
+        working-directory: ./flag-explorer-ui
     permissions:
       contents: read
       packages: write
@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: '18'
       - name: Install frontend dependencies
-        run: npm install --frozen-lockfile
+        run: npm install 
       - name: Run frontend tests
         env:
           REACT_APP_API_URL: "http://localhost:3000/api"
