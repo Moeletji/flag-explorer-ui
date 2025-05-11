@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Country, CountryDetails } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+const API_BASE_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:3000/api';
 
 if (!API_BASE_URL) {
   console.error("Error: REACT_APP_API_URL is not defined. Frontend won't be able to connect to the backend.");
