@@ -14,9 +14,6 @@ jobs:
   test-and-build-frontend:
     name: Test & Build Frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./flag-explorer-ui
     permissions:
       contents: read
       packages: write
@@ -53,8 +50,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
-          context: ./flag-explorer-ui
-          file: ./Dockerfile
+          file: Dockerfile
           push: true
           tags: |
             ${{ env.DOCKER_IMAGE_FRONTEND }}:latest
